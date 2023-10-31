@@ -17134,3 +17134,145 @@ VALUES
   ('26/3/18', 'USA', 'Retail', 'F2', 'New', '25665', '1064172'),
   ('26/3/18', 'EUROPE', 'Retail', 'C4', 'New', '883', '33523'),
   ('26/3/18', 'AFRICA', 'Retail', 'C3', 'Existing', '218516', '12083475');
+
+SELECT *
+FROM data_mart.weekly_sales
+LIMIT 10;
+
+DROP TABLE IF EXISTS data_mart.clean_weekly_sales;
+CREATE TABLE data_mart.clean_weekly_sales AS (SELECT
+ TO_DATE(week_date, 'DD-MM-YY') as week_date,
+ DATE_PART('W', TO_DATE(week_date, 'DD-MM-YY')) as week_number,
+ DATE_PART('MON', TO_DATE(week_date, 'DD-MM-YY')) as month_number,
+ DATE_PART('Y', TO_DATE(week_date, 'DD-MM-YY')) as calendar_year,
+ CASE
+  WHEN RIGHT(segment,1)='1' THEN 'Young Adults'
+  WHEN RIGHT(segment,1)='2' THEN 'Middle_Aged'
+  WHEN RIGHT(segment,1) IN ('3','4') THEN 'Retirees'                                 
+  ELSE 'UNKNOWN'  
+ END AS age_band,
+ CASE
+  WHEN LEFT(segment,1)='C' THEN 'couples'
+  WHEN LEFT(segment,1)='F' THEN 'family'
+  ELSE 'UNKNOWN'
+ END AS demographic,
+ CASE
+   WHEN segment = 'null' THEN 'UNKNOWN'
+   ELSE segment
+ END AS segment,                                            
+ region,
+ platform,
+ customer_type,
+ transactions,
+ sales,
+ ROUND((sales*1.0)/transactions, 2) AS avg_transaction            
+FROM data_mart.weekly_sales);
+                                   
+SELECT * FROM data_mart.clean_weekly_sales LIMIT 10;
+
+SELECT DISTINCT(TO_CHAR(week_date, 'day')) as Day_Used_for_Week_Date
+FROM data_mart.clean_weekly_sales;
+
+SELECT * from generate_series(1,52,1) as missing_week_numbers
+WHERE missing_week_numbers NOT IN (SELECT DISTINCT(week_number) FROM data_mart.clean_weekly_sales);
+
+SELECT calendar_year, sum(transactions) as Total_Transactions
+FROM data_mart.clean_weekly_sales
+GROUP BY calendar_year
+ORDER BY calendar_year;
+
+/* Try to Convert the Number to Name in Month Column */
+SELECT region, month_number, sum(sales) as Total_Sales
+FROM data_mart.clean_weekly_sales
+GROUP BY region, month_number
+ORDER BY region, month_number;
+
+SELECT platform, sum(transactions) as Total_Transactions
+FROM data_mart.clean_weekly_sales
+GROUP BY platform;
+
+/*Usage of window function */
+with alpha as(
+SELECT distinct calendar_year, month_number, platform, round(100.0* sum(sales) OVER (PARTITION BY calendar_year,month_number, platform)/ sum(sales) OVER (PARTITION BY calendar_year,month_number), 2) as sales
+from data_mart.clean_weekly_sales
+ORDER BY calendar_year, month_number)
+
+select calendar_year, month_number, sales as Retail_Sales, (100.0-sales) as Shopify_sales
+from alpha
+where platform='Retail';
+
+WITH Beta AS(
+SELECT distinct calendar_year, demographic, ROUND(100.0* SUM(sales) OVER (PARTITION BY calendar_year, demographic) / sum(sales) OVER
+(PARTITION BY calendar_year), 2) as Sales_by_Demographic
+FROM data_mart.clean_weekly_sales
+ORDER BY calendar_year, demographic)
+
+SELECT B1.calendar_year,
+B1.sales_by_demographic as sales_percent_unknown,
+B2.sales_by_demographic as sales_percent_family,
+B3.sales_by_demographic as sales_percent_couples
+FROM BETA B1
+JOIN BETA B2 ON B1.calendar_year = B2.calendar_year
+JOIN BETA B3 ON B2.calendar_year = B3.calendar_year
+WHERE B1.demographic='UNKNOWN' and  B2.demographic='family' and B3.demographic='couples';
+
+SELECT D.age_band, D.demographic, sum(D.sales) as total_sales
+from data_mart.clean_weekly_sales D
+where D.platform='Retail'
+group by D.age_band, D.demographic
+ORDER BY TOTAL_SALES DESC;
+
+SELECT CALENDAR_YEAR, PLATFORM, ROUND(SUM(SALES)*1.0/SUM(TRANSACTIONS), 2) AS AVG_TRANSACTIONS_GROUP, ROUND(AVG(AVG_TRANSACTION), 2) AS AVG_OF_AVG_TRANSACTION
+FROM data_mart.clean_weekly_sales
+GROUP BY CALENDAR_YEAR, PLATFORM
+ORDER BY CALENDAR_YEAR, PLATFORM; 
+
+/*What is the week number for the given cut off date? */
+CREATE TABLE GAMMA AS
+( SELECT DISTINCT WEEK_NUMBER AS CUTOFF
+ FROM DATA_MART.CLEAN_WEEKLY_SALES
+ WHERE WEEK_DATE ='2020-06-15');
+ 
+CREATE TABLE HECTAR AS 
+ (
+   SELECT CALENDAR_YEAR, WEEK_NUMBER, SUM(SALES) AS SALES
+   FROM DATA_MART.CLEAN_WEEKLY_SALES C, GAMMA G
+   WHERE WEEK_NUMBER BETWEEN G.CUTOFF-12 AND G.CUTOFF+11
+   GROUP BY CALENDAR_YEAR, WEEK_NUMBER
+ );
+ 
+ WITH DIVINE AS (SELECT H.CALENDAR_YEAR,
+    SUM(CASE WHEN WEEK_NUMBER BETWEEN G.CUTOFF-4 AND G.CUTOFF-1 THEN H.SALES END) AS PRE_FOUR_WEEK_SALES,
+    SUM(CASE WHEN WEEK_NUMBER BETWEEN G.CUTOFF AND G.CUTOFF+3 THEN H.SALES END) AS POST_FOUR_WEEK_SALES,
+    SUM(CASE WHEN WEEK_NUMBER BETWEEN G.CUTOFF-12 AND G.CUTOFF-1 THEN H.SALES END) AS PRE_12_WEEK_SALES,
+    SUM(CASE WHEN WEEK_NUMBER BETWEEN G.CUTOFF AND G.CUTOFF+12 THEN H.SALES END) AS POST_12_WEEK_SALES
+  FROM HECTAR H, GAMMA G
+  GROUP BY H.CALENDAR_YEAR
+  ORDER BY H.CALENDAR_YEAR)
+
+ SELECT D.CALENDAR_YEAR, 
+ 	(D.POST_FOUR_WEEK_SALES- D.PRE_FOUR_WEEK_SALES) AS DIFFERENCE_IN_SALES_4W, 
+ 	ROUND(((D.POST_FOUR_WEEK_SALES- D.PRE_FOUR_WEEK_SALES)*100.0)/D.PRE_FOUR_WEEK_SALES, 2) AS DIFFERNCE_PERCENT_4W,
+    (D.POST_12_WEEK_SALES - D.PRE_12_WEEK_SALES) AS DIFFERENCE_IN_SALES_12W,
+    ROUND(((D.POST_12_WEEK_SALES - D.PRE_12_WEEK_SALES)*100.0)/D.PRE_12_WEEK_SALES, 2) AS DIFFERENCE_PERCENT_12W
+ FROM DIVINE D
+ ORDER BY CALENDAR_YEAR;
+ 
+CREATE TABLE BONUS AS(
+	SELECT C.*
+	FROM DATA_MART.CLEAN_WEEKLY_SALES C, GAMMA G
+	WHERE C.WEEK_NUMBER BETWEEN G.CUTOFF-12 AND G.CUTOFF+11 AND C.CALENDAR_YEAR='2020'
+);
+
+/*METRICS WITH HIGHEST NEGATIVE IMPACT */
+WITH AREA_SALES AS (
+  SELECT B.REGION, B.PLATFORM, B.AGE_BAND, B.DEMOGRAPHIC, B.CUSTOMER_TYPE, SUM(CASE WHEN B.WEEK_NUMBER BETWEEN G.CUTOFF-12 AND G.CUTOFF-1 THEN B.SALES END) AS PRE_12_WEEK_SALES,
+  SUM(CASE WHEN WEEK_NUMBER BETWEEN G.CUTOFF AND G.CUTOFF+12 THEN B.SALES END) AS POST_12_WEEK_SALES
+  FROM BONUS B, GAMMA G
+  GROUP BY B.REGION, B.PLATFORM, B.AGE_BAND, B.DEMOGRAPHIC, B.CUSTOMER_TYPE)
+  
+SELECT REGION, PLATFORM, AGE_BAND, DEMOGRAPHIC, CUSTOMER_TYPE,
+(POST_12_WEEK_SALES-PRE_12_WEEK_SALES) AS DIFFERENCE, 
+ROUND((POST_12_WEEK_SALES-PRE_12_WEEK_SALES)*100.0/ PRE_12_WEEK_SALES, 2) AS PERCENTAGE_CHANGE_IN_SALES
+FROM AREA_SALES
+ORDER BY PERCENTAGE_CHANGE_IN_SALES ASC;
