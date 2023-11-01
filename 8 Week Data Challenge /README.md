@@ -21,13 +21,43 @@ In a single query, perform the following operations and generate a new table in 
 - Add a new column called age_band after the original segment column using the following mapping on the number inside the segment value
 
 - Segment	age_band
- -- 1	Young Adults
- -- 2	Middle Aged
- -- 3 or 4	Retirees
+  - 1	Young Adults
+  - 2	Middle Aged
+  - 3 or 4	Retirees
 - Add a new demographic column using the following mapping for the first letter in the segment values:
 segment	demographic
- -- C	Couples
- -- F	Families
+  - C	Couples
+  - F	Families
 - Ensure all null string values with an "unknown" string value in the original segment column as well as the new age_band and demographic columns
+
+``` sql
+CREATE TABLE data_mart.clean_weekly_sales AS (SELECT
+ TO_DATE(week_date, 'DD-MM-YY') as week_date,
+ DATE_PART('W', TO_DATE(week_date, 'DD-MM-YY')) as week_number,
+ DATE_PART('MON', TO_DATE(week_date, 'DD-MM-YY')) as month_number,
+ DATE_PART('Y', TO_DATE(week_date, 'DD-MM-YY')) as calendar_year,
+ CASE
+  WHEN RIGHT(segment,1)='1' THEN 'Young Adults'
+  WHEN RIGHT(segment,1)='2' THEN 'Middle_Aged'
+  WHEN RIGHT(segment,1) IN ('3','4') THEN 'Retirees'
+  ELSE 'UNKNOWN'  
+ END AS age_band,
+ CASE
+  WHEN LEFT(segment,1)='C' THEN 'couples'
+  WHEN LEFT(segment,1)='F' THEN 'family'
+  ELSE 'UNKNOWN'
+ END AS demographic,
+ CASE
+   WHEN segment = 'null' THEN 'UNKNOWN'
+   ELSE segment
+ END AS segment,                                            
+ region,
+ platform,
+ customer_type,
+ transactions,
+ sales,
+ ROUND((sales*1.0)/transactions, 2) AS avg_transaction            
+FROM data_mart.weekly_sales);
+```
 
 - Generate a new avg_transaction column as the sales value divided by transactions rounded to 2 decimal places for each record
