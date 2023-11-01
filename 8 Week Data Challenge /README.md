@@ -61,18 +61,87 @@ CREATE TABLE data_mart.clean_weekly_sales AS (SELECT
  ROUND((sales*1.0)/transactions, 2) AS avg_transaction            
 FROM data_mart.weekly_sales);
 ```
+Here are a sample of 10 rows after the cleanup of the dataset
 
-|week_date|region|platform|segment|customer_type|transactions|sales|
-|:----|:----|:----|:----|:----|:----|:----|
-|31/8/20|ASIA|Retail|C3|New|120631|3656163|
-|31/8/20|ASIA|Retail|F1|New|31574|996575|
-|31/8/20|USA|Retail|null|Guest|529151|16509610|
-|31/8/20|EUROPE|Retail|C1|New|4517|141942|
-|31/8/20|AFRICA|Retail|C2|New|58046|1758388|
-|31/8/20|CANADA|Shopify|F2|Existing|1336|243878|
-|31/8/20|AFRICA|Shopify|F3|Existing|2514|519502|
-|31/8/20|ASIA|Shopify|F1|Existing|2158|371417|
-|31/8/20|AFRICA|Shopify|F2|New|318|49557|
-|31/8/20|AFRICA|Retail|C3|New|111032|3888162|
+|week_date|week_number|month_number|calendar_year|age_band|demographic|segment|region|platform|customer_type|transactions|sales|avg_transaction|
+|:----|:----|:----|:----|:----|:----|:----|:----|:----|:----|:----|:----|:----|
+|2020-08-31T00:00:00.000Z|36|8|2020|Retirees|couples|C3|ASIA|Retail|New|120631|3656163|30.31|
+|2020-08-31T00:00:00.000Z|36|8|2020|Young Adults|family|F1|ASIA|Retail|New|31574|996575|31.56|
+|2020-08-31T00:00:00.000Z|36|8|2020|UNKNOWN|UNKNOWN|UNKNOWN|USA|Retail|Guest|529151|16509610|31.20|
+|2020-08-31T00:00:00.000Z|36|8|2020|Young Adults|couples|C1|EUROPE|Retail|New|4517|141942|31.42|
+|2020-08-31T00:00:00.000Z|36|8|2020|Middle_Aged|couples|C2|AFRICA|Retail|New|58046|1758388|30.29|
+|2020-08-31T00:00:00.000Z|36|8|2020|Middle_Aged|family|F2|CANADA|Shopify|Existing|1336|243878|182.54|
+|2020-08-31T00:00:00.000Z|36|8|2020|Retirees|family|F3|AFRICA|Shopify|Existing|2514|519502|206.64|
+|2020-08-31T00:00:00.000Z|36|8|2020|Young Adults|family|F1|ASIA|Shopify|Existing|2158|371417|172.11|
+|2020-08-31T00:00:00.000Z|36|8|2020|Middle_Aged|family|F2|AFRICA|Shopify|New|318|49557|155.84|
+|2020-08-31T00:00:00.000Z|36|8|2020|Retirees|couples|C3|AFRICA|Retail|New|111032|3888162|35.02|
+
+##### Data Exploration 
+1. What day of the week is used for each week_date value?
+
+``` sql
+SELECT DISTINCT(TO_CHAR(week_date, 'day')) as Day_Used_for_Week_Date
+FROM data_mart.clean_weekly_sales;
+```
+|day_used_for_week_date|
+|:----|
+|monday|
+
+2. What range of week numbers are missing from the dataset?
+``` sql
+SELECT * from generate_series(1,52,1) as missing_week_numbers
+WHERE missing_week_numbers NOT IN (SELECT DISTINCT(week_number) FROM data_mart.clean_weekly_sales);
+```
+|missing_week_numbers|
+|:----|
+|1|
+|2|
+|3|
+|4|
+
+3. How many total transactions were there for each year in the dataset?
+ 
+``` sql
+SELECT calendar_year, sum(transactions) as Total_Transactions
+FROM data_mart.clean_weekly_sales
+GROUP BY calendar_year
+ORDER BY calendar_year;
+```
+
+|calendar_year|total_transactions|
+|:----|:----|
+|2018|346406460|
+|2019|365639285|
+|2020|375813651|
 
 
+4. What is the total sales for each region for each month?
+
+``` sql
+
+```
+9. What is the total count of transactions for each platform
+10. 
+``` sql
+
+```
+11. What is the percentage of sales for Retail vs Shopify for each month?
+12. 
+``` sql
+
+```
+13. What is the percentage of sales by demographic for each year in the dataset?
+14. 
+``` sql
+
+```
+15. Which age_band and demographic values contribute the most to Retail sales?
+16. 
+``` sql
+
+```
+17. Can we use the avg_transaction column to find the average transaction size for each year for Retail vs Shopify? If not - how would you calculate it instead?
+18. 
+``` sql
+
+```
