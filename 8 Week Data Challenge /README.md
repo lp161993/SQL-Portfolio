@@ -21,14 +21,16 @@ In a single query, perform the following operations and generate a new table in 
 - Add a new column called age_band after the original segment column using the following mapping on the number inside the segment value
 
 - Segment	age_band
-  - 1	Young Adults
-  - 2	Middle Aged
-  - 3 or 4	Retirees
+  - 1	(Young Adults)
+  - 2	(Middle Aged)
+  - 3 or 4	(Retirees)
 - Add a new demographic column using the following mapping for the first letter in the segment values:
 segment	demographic
-  - C	Couples
-  - F	Families
+  - C	(Couples)
+  - F	(Families)
 - Ensure all null string values with an "unknown" string value in the original segment column as well as the new age_band and demographic columns
+
+- Generate a new avg_transaction column as the sales value divided by transactions rounded to 2 decimal places for each record
 
 ``` sql
 CREATE TABLE data_mart.clean_weekly_sales AS (SELECT
@@ -60,4 +62,17 @@ CREATE TABLE data_mart.clean_weekly_sales AS (SELECT
 FROM data_mart.weekly_sales);
 ```
 
-- Generate a new avg_transaction column as the sales value divided by transactions rounded to 2 decimal places for each record
+|week_date|region|platform|segment|customer_type|transactions|sales|
+|:----|:----|:----|:----|:----|:----|:----|
+|31/8/20|ASIA|Retail|C3|New|120631|3656163|
+|31/8/20|ASIA|Retail|F1|New|31574|996575|
+|31/8/20|USA|Retail|null|Guest|529151|16509610|
+|31/8/20|EUROPE|Retail|C1|New|4517|141942|
+|31/8/20|AFRICA|Retail|C2|New|58046|1758388|
+|31/8/20|CANADA|Shopify|F2|Existing|1336|243878|
+|31/8/20|AFRICA|Shopify|F3|Existing|2514|519502|
+|31/8/20|ASIA|Shopify|F1|Existing|2158|371417|
+|31/8/20|AFRICA|Shopify|F2|New|318|49557|
+|31/8/20|AFRICA|Retail|C3|New|111032|3888162|
+
+
