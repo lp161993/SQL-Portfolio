@@ -223,7 +223,7 @@ FROM data_mart.clean_weekly_sales
 GROUP BY CALENDAR_YEAR, PLATFORM
 ORDER BY CALENDAR_YEAR, PLATFORM; 
 ```
-In math, the average of averages is not accurate and this question us not out of bounds to this fact as shown below. The collective sales/transactions for every platform in a year, is a better approach and the results are shown below.
+In math, the average of averages is not accurate and this question is not out of bounds to this fact as shown below. The collective sales/transactions for every platform in a year, is a better approach and the results are shown below in 'avg_transactions_group'.
 |calendar_year|platform|avg_transactions_group|avg_of_avg_transaction|
 |:----|:----|:----|:----|
 |2018|Retail|36.56|42.91|
