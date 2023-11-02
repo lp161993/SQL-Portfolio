@@ -1,11 +1,11 @@
 # Project 1 - Danny Data Mart Challenge
 Let us help Danny analyse how well Data Mart is contributing to his pockets after a major supply chain change!
 
-#### Introduction: 
+### Introduction: 
 https://8weeksqlchallenge.com/case-study-5/ is the link which provides the data challenge related details.
 In short: Data Mart is a supermarket in Australia and Danny, the owner, has made major supply chain changes in 2020. Let's help Danny analyse the effects of this change in the sales performance from the sales data given. 
 
-#### Data Cleanup:
+### Data Cleanup:
 
 Tasks at hand: 
 In a single query, perform the following operations and generate a new table in the data_mart schema named clean_weekly_sales:
@@ -76,8 +76,8 @@ Here are a sample of 10 rows after the cleanup of the dataset
 |2020-08-31T00:00:00.000Z|36|8|2020|Middle_Aged|family|F2|AFRICA|Shopify|New|318|49557|155.84|
 |2020-08-31T00:00:00.000Z|36|8|2020|Retirees|couples|C3|AFRICA|Retail|New|111032|3888162|35.02|
 
-#### Data Exploration 
-1. What day of the week is used for each week_date value?
+### Data Exploration 
+**1. What day of the week is used for each week_date value?**
 
 ``` sql
 SELECT DISTINCT(TO_CHAR(week_date, 'day')) as Day_Used_for_Week_Date
@@ -87,7 +87,7 @@ FROM data_mart.clean_weekly_sales;
 |:----|
 |monday|
 
-2. What range of week numbers are missing from the dataset?
+**2. What range of week numbers are missing from the dataset?**
 ``` sql
 SELECT * from generate_series(1,52,1) as missing_week_numbers
 WHERE missing_week_numbers NOT IN (SELECT DISTINCT(week_number) FROM data_mart.clean_weekly_sales);
@@ -101,7 +101,7 @@ There are a total of 28 rows, shown below are top 4 rows only.
 |3|
 |4|
 
-3. How many total transactions were there for each year in the dataset?
+**3. How many total transactions were there for each year in the dataset?**
  
 ``` sql
 SELECT calendar_year, sum(transactions) as Total_Transactions
@@ -116,7 +116,7 @@ ORDER BY calendar_year;
 |2019|365639285|
 |2020|375813651|
 
-4. What is the total sales for each region for each month?
+**4. What is the total sales for each region for each month?**
 
 ``` sql
 SELECT region, month_number, sum(sales) as Total_Sales
@@ -135,7 +135,7 @@ Shown below is a sample of 7 rows, one for each region for the month of March. T
 |SOUTH AMERICA|3|71023109|
 |USA|3|225353043|
 
-5. What is the total count of transactions for each platform
+**5. What is the total count of transactions for each platform?**
  
 ``` sql
 SELECT platform, sum(transactions) as Total_Transactions
@@ -148,7 +148,7 @@ GROUP BY platform;
 |Retail|1081934227|
 
 
-6. What is the percentage of sales for Retail vs Shopify for each month?
+**6. What is the percentage of sales for Retail vs Shopify for each month?**
 
 Let's solve this by using windown function(PARTITION BY)
 ``` sql
@@ -170,7 +170,7 @@ Given below is a sample of 3 rows.
 |2018|5|97.73|2.27|
 
 
-7. What is the percentage of sales by demographic for each year in the dataset?
+**7. What is the percentage of sales by demographic for each year in the dataset?**
  
 ``` sql
 WITH Beta AS(
@@ -195,7 +195,7 @@ WHERE B1.demographic='UNKNOWN' and  B2.demographic='family' and B3.demographic='
 |2019|40.25|32.47|27.28|
 |2020|38.55|32.73|28.72|
 
-8. Which age_band and demographic values contribute the most to Retail sales?
+**8. Which age_band and demographic values contribute the most to Retail sales?**
  
 ``` sql
 SELECT D.age_band, D.demographic, sum(D.sales) as total_sales
@@ -204,7 +204,7 @@ where D.platform='Retail'
 group by D.age_band, D.demographic
 ORDER BY TOTAL_SALES DESC
 ```
-
+As seen below, the highest sales is not specific to a age_band or demographic, The second row shows that the retired family people have the second highest total sales.
 |age_band|demographic|total_sales|
 |:---:|:---:|:---:|
 |UNKNOWN|UNKNOWN|16067285533|
@@ -215,7 +215,7 @@ ORDER BY TOTAL_SALES DESC
 |Middle_Aged|couples|1854160330|
 |Young Adults|family|1770889293|
 
-9. Can we use the avg_transaction column to find the average transaction size for each year for Retail vs Shopify? If not - how would you calculate it instead?
+**9. Can we use the avg_transaction column to find the average transaction size for each year for Retail vs Shopify? If not - how would you calculate it instead?**
 
 ``` sql
 SELECT CALENDAR_YEAR, PLATFORM, ROUND(SUM(SALES)*1.0/SUM(TRANSACTIONS), 2) AS AVG_TRANSACTIONS_GROUP, ROUND(AVG(AVG_TRANSACTION), 2) AS AVG_OF_AVG_TRANSACTION
