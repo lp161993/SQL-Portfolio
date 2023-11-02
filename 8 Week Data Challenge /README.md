@@ -204,7 +204,7 @@ where D.platform='Retail'
 group by D.age_band, D.demographic
 ORDER BY TOTAL_SALES DESC
 ```
-As seen below, the highest sales is not specific to a age_band or demographic, The second row shows that the retired family people have the second highest total sales.
+As seen below, the highest sales is not specific to a age_band or demographic, the second row shows that the retired family people have the second highest total sales.
 |age_band|demographic|total_sales|
 |:---:|:---:|:---:|
 |UNKNOWN|UNKNOWN|16067285533|
@@ -223,7 +223,7 @@ FROM data_mart.clean_weekly_sales
 GROUP BY CALENDAR_YEAR, PLATFORM
 ORDER BY CALENDAR_YEAR, PLATFORM; 
 ```
-
+In math, the average of averages is not accurate and this question us not out of bounds to this fact as shown below. The collective sales/transactions for every platform in a year, is a better approach and the results are shown below.
 |calendar_year|platform|avg_transactions_group|avg_of_avg_transaction|
 |:----|:----|:----|:----|
 |2018|Retail|36.56|42.91|
