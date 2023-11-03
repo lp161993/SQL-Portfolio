@@ -270,9 +270,60 @@ CREATE TABLE HECTAR AS
 /*Calculating the sales performance every year */
  SELECT D.CALENDAR_YEAR, 
  	(D.POST_FOUR_WEEK_SALES- D.PRE_FOUR_WEEK_SALES) AS DIFFERENCE_IN_SALES_4W, 
- 	ROUND(((D.POST_FOUR_WEEK_SALES- D.PRE_FOUR_WEEK_SALES)*100.0)/D.PRE_FOUR_WEEK_SALES, 2) AS DIFFERNCE_PERCENT_4W,
+ 	ROUND(((D.POST_FOUR_WEEK_SALES- D.PRE_FOUR_WEEK_SALES)*100.0)/D.PRE_FOUR_WEEK_SALES, 2) AS DIFFERENCE_PERCENT_4W,
     (D.POST_12_WEEK_SALES - D.PRE_12_WEEK_SALES) AS DIFFERENCE_IN_SALES_12W,
     ROUND(((D.POST_12_WEEK_SALES - D.PRE_12_WEEK_SALES)*100.0)/D.PRE_12_WEEK_SALES, 2) AS DIFFERENCE_PERCENT_12W
  FROM DIVINE D
  ORDER BY CALENDAR_YEAR;
 ```
+Shown below is the sales performance on yearly basis. The pre and post performance of 4 week bandwidth and 12 week bandwidth are calculated based on the cutoff date '2020-06-15'
+
+|calendar_year|difference_in_sales_4w|difference_percent_4w|difference_in_sales_12w|difference_percent_12w|
+|:----|:----|:----|:----|:----|
+|2018|4102105|0.19|104256193|1.63|
+|2019|2336594|0.10|-20740294|-0.30|
+|2020|-26884188|-1.15|-152325394|-2.14|
+
+Consider row 3, where the supply chain change had been made. There has been a 1.15 percent difference in sales for 4 weeks after the change has been made, whilst the same period saw a positive growth in sales for 2018 and 2019.
+
+The 12 week period post the supply chain change has seen a decrease of 2.14 percent. This number is very less in comparison with the numbers of previous years. 
+Based on these facts, we can conclude maybe the supply chain change has negatively impacted the sales performance. If there was further historical data, then we can be more assured that this change has for sure negatively impacted the sales.
+
+### Bonus Question
+
+Which area(based on Region, Platform, Age_band, Demographic & Customer_Type) has been highly impacted owing to this change?
+
+```sql
+CREATE TABLE BONUS AS(
+	SELECT C.*
+	FROM DATA_MART.CLEAN_WEEKLY_SALES C, GAMMA G
+	WHERE C.WEEK_NUMBER BETWEEN G.CUTOFF-12 AND G.CUTOFF+11 AND C.CALENDAR_YEAR='2020'
+);
+
+/*METRICS WITH HIGHEST NEGATIVE IMPACT */
+WITH AREA_SALES AS (
+  SELECT B.REGION, B.PLATFORM, B.AGE_BAND, B.DEMOGRAPHIC, B.CUSTOMER_TYPE, SUM(CASE WHEN B.WEEK_NUMBER BETWEEN G.CUTOFF-12 AND G.CUTOFF-1 THEN B.SALES END) AS PRE_12_WEEK_SALES,
+  SUM(CASE WHEN WEEK_NUMBER BETWEEN G.CUTOFF AND G.CUTOFF+12 THEN B.SALES END) AS POST_12_WEEK_SALES
+  FROM BONUS B, GAMMA G
+  GROUP BY B.REGION, B.PLATFORM, B.AGE_BAND, B.DEMOGRAPHIC, B.CUSTOMER_TYPE)
+  
+SELECT REGION, PLATFORM, AGE_BAND, DEMOGRAPHIC, CUSTOMER_TYPE,
+(POST_12_WEEK_SALES-PRE_12_WEEK_SALES) AS DIFFERENCE, 
+ROUND((POST_12_WEEK_SALES-PRE_12_WEEK_SALES)*100.0/ PRE_12_WEEK_SALES, 2) AS PERCENTAGE_CHANGE_IN_SALES
+FROM AREA_SALES
+ORDER BY PERCENTAGE_CHANGE_IN_SALES ASC;
+```
+Shown below are only top 4 rows from the result. As we can see the first row with parameter 'Region- South America, Platform- Shopify, Customer Type- Existing, Unknown Age and Demographic details' has shown the maximum decline in sales of 42.23%.
+
+|region|platform|age_band|demographic|customer_type|difference|percentage_change_in_sales|
+|:----|:----|:----|:----|:----|:----|:----|
+|SOUTH AMERICA|Shopify|UNKNOWN|UNKNOWN|Existing|-4977|-42.23|
+|EUROPE|Shopify|Retirees|family|New|-2458|-33.71|
+|EUROPE|Shopify|Young Adults|family|New|-4437|-27.97|
+|SOUTH AMERICA|Retail|UNKNOWN|UNKNOWN|Existing|-29650|-23.20|
+
+Insights for Danny Team:
+
+1. Collect more historical data for years before 2018 and compare sales performance around the same time period. This will provide surity if the supply chain change was the only reason for decline in sales.
+2. If the sales and transaction data was available on a category/ sub-category level, then we can pinpoint if the decline has been over all category or in a specific category. If the decline was in a specific category, then the supply chain change was not the only reason why the sales decline was observed.
+
