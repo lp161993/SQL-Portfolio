@@ -237,14 +237,18 @@ In math, the average of averages is not accurate and this question is not out of
 
 Now to the actual question at hand. 2020-06-15 is the date when the supply chain changes were made. Hence, we analyse the sales before and after this specific date.
 
-Step 1: Table gamma has the week_number for the specific cutoff date given.
+Approach:
+- Pre and post sales are analysed on week basis. Hence, it is convinient to identify the week_number associated with cutoff date and base our further calculation on that number.
+- The analysis required Pre and Post 4 weeks, 12 weeks sales performance in 2020 and the same for 2018, 2019. Hence, after multiple iterations of code, I have been able to calculate all the required numbers in a single table. 
 
 ```sql
+/*Identify the week_number associated with the cutoff date*/
 CREATE TABLE GAMMA AS
 ( SELECT DISTINCT WEEK_NUMBER AS CUTOFF
  FROM DATA_MART.CLEAN_WEEKLY_SALES
  WHERE WEEK_DATE ='2020-06-15');
- 
+
+/*Finding the rows which are 12 weeks before and after the cutoff date, this includes the 4 weeks sales as well(!Duh obviously)*/
 CREATE TABLE HECTAR AS 
  (
    SELECT CALENDAR_YEAR, WEEK_NUMBER, SUM(SALES) AS SALES
@@ -252,7 +256,8 @@ CREATE TABLE HECTAR AS
    WHERE WEEK_NUMBER BETWEEN G.CUTOFF-12 AND G.CUTOFF+11
    GROUP BY CALENDAR_YEAR, WEEK_NUMBER
  );
- 
+
+/*Calculating the collective sales for Pre and Post 4 and 12 weeks for a given calendar year */
  WITH DIVINE AS (SELECT H.CALENDAR_YEAR,
     SUM(CASE WHEN WEEK_NUMBER BETWEEN G.CUTOFF-4 AND G.CUTOFF-1 THEN H.SALES END) AS PRE_FOUR_WEEK_SALES,
     SUM(CASE WHEN WEEK_NUMBER BETWEEN G.CUTOFF AND G.CUTOFF+3 THEN H.SALES END) AS POST_FOUR_WEEK_SALES,
@@ -262,6 +267,7 @@ CREATE TABLE HECTAR AS
   GROUP BY H.CALENDAR_YEAR
   ORDER BY H.CALENDAR_YEAR)
 
+/*Calculating the sales performance every year */
  SELECT D.CALENDAR_YEAR, 
  	(D.POST_FOUR_WEEK_SALES- D.PRE_FOUR_WEEK_SALES) AS DIFFERENCE_IN_SALES_4W, 
  	ROUND(((D.POST_FOUR_WEEK_SALES- D.PRE_FOUR_WEEK_SALES)*100.0)/D.PRE_FOUR_WEEK_SALES, 2) AS DIFFERNCE_PERCENT_4W,
