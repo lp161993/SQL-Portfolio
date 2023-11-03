@@ -322,7 +322,7 @@ Shown below are only top 4 rows from the result. As we can see the first row wit
 |EUROPE|Shopify|Young Adults|family|New|-4437|-27.97|
 |SOUTH AMERICA|Retail|UNKNOWN|UNKNOWN|Existing|-29650|-23.20|
 
-Insights for Danny Team:
+### Insights for Danny Team:
 
 1. Collect more historical data for years before 2018 and compare sales performance around the same time period. This will provide surity if the supply chain change was the only reason for decline in sales.
 2. If the sales and transaction data was available on a category/ sub-category level, then we can pinpoint if the decline has been over all category or in a specific category. If the decline was in a specific category, then the supply chain change was not the only reason why the sales decline was observed.
